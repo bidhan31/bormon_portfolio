@@ -155,124 +155,73 @@
   if (form && msg && btn) {
     /* Where to send a visitor who submits with JavaScript disabled. Derived from
        the live page URL so it stays correct on localhost and on any host. */
-    var nextEl = form.querySelector('input[name="_next"]');
-    if (nextEl) nextEl.value = location.origin + location.pathname + '#contact';
+    var nextEl = form.querySelector('input[name="redirect"]');
+    if (nextEl) nextEl.value = location.origin + location.pathname + '?sent=1#contact';
+
+    function hasKey() {
+      var k = form.querySelector('input[name="access_key"]');
+      return k && k.value && k.value.indexOf('PASTE-YOUR') !== 0 && k.value.length > 10;
+    }
 
     form.addEventListener('submit', function (e) {
-      e.preventDefault();
-
       var name = form.elements.name.value.trim();
       var email = form.elements.email.value.trim();
       var subject = form.elements.subject.value.trim();
       var message = form.elements.message.value.trim();
 
       if (!name || !email || !message) {
+        e.preventDefault();
         msg.className = 'form-msg err';
         msg.textContent = 'Please fill in your name, email and message.';
         return;
       }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        e.preventDefault();
         msg.className = 'form-msg err';
         msg.textContent = 'That email address does not look right — mind checking it?';
         return;
       }
 
       /*
-       * Delivers through FormSubmit: a hosted form backend that needs no account
-       * and emails straight to the address in the URL. Falls back to the
-       * visitor's mail client only if the request itself fails.
+       * Deliver via native POST to Web3Forms (no fetch / no CORS issues).
+       * Web3Forms has NO activation-token step, so the
+       * "Confirmation token not found" error from FormSubmit is gone.
        */
-      var ENDPOINT = 'https://formsubmit.co/ajax/bidhanbormon08@gmail.com';
-      var payload = {
-        name: name,
-        email: email,
-        subject: subject || ('Portfolio enquiry from ' + name),
-        message: message,
-        _subject: 'Portfolio enquiry from ' + name,
-        _template: 'table'
-      };
+      var subj = form.querySelector('input[name="subject"]');
+      if (subj) subj.value = 'Portfolio enquiry from ' + name + (subject ? ' — ' + subject : '');
 
-      function mailtoFallback() {
-        return 'mailto:bidhanbormon08@gmail.com'
-          + '?subject=' + encodeURIComponent(payload.subject)
-          + '&body=' + encodeURIComponent(message + '\n\n— ' + name + ' (' + email + ')');
+      if (!hasKey()) {
+        e.preventDefault();
+        msg.className = 'form-msg err';
+        msg.textContent = 'Form needs a free Web3Forms key: go to web3forms.com, enter bidhanbormon08@gmail.com, copy the key, and paste it into access_key in index.html. Takes 1 minute.';
+        return;
       }
 
-      /* The reliable escape hatch: no mail client needed. */
-      function copyFallback() {
-        var body = message + '\n\n— ' + name + ' (' + email + ')';
-        var done = function () {
-          btn.textContent = 'Copied ✓';
-          msg.className = 'form-msg ok';
-          msg.textContent = 'Message copied to your clipboard — just paste it into an email to bidhanbormon08@gmail.com';
-          setTimeout(function () { btn.textContent = 'Send Message'; }, 2500);
-        };
-
-        if (navigator.clipboard && window.isSecureContext) {
-          navigator.clipboard.writeText(body).then(done, function () { openMailto(); });
-        } else {
-          openMailto();
-        }
-      }
-
-      function openMailto() {
-        window.location.href = mailtoFallback();
-      }
+      /* Flag this submit so the load handler below can show success. */
+      try { sessionStorage.setItem('contactSent', JSON.stringify({ name: name, at: Date.now() })); } catch (err) { }
 
       btn.disabled = true;
       btn.textContent = 'Sending…';
       msg.className = 'form-msg busy';
       msg.textContent = 'Sending your message…';
-
-      fetch(ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-        .then(function (r) {
-          return r.json().then(function (d) { return { ok: r.ok, data: d }; });
-        })
-        .then(function (res) {
-          if (!res.ok || !res.data || res.data.success !== 'true') {
-            var why = (res.data && res.data.message) || 'the server rejected the request';
-            throw new Error(why);
-          }
-          form.reset();
-          msg.className = 'form-msg ok';
-          msg.textContent = 'Thanks ' + name + '! Your message is on its way to my inbox — I usually reply within a day.';
-          btn.textContent = 'Send Message';
-          btn.disabled = false;
-        })
-        .catch(function (err) {
-          /* Never surface raw server text to visitors — it leaks internal
-             service state and reads as broken. Log it, show something human. */
-          console.error('[contact form]', err.message);
-
-          var notActivated = /activat/i.test(err.message);
-          msg.className = 'form-msg err';
-          msg.textContent = notActivated
-            ? 'The form is being set up. Please email me directly at '
-            : 'Something went wrong sending that. Please email me directly at ';
-
-          var addr = document.createElement('a');
-          addr.href = mailtoFallback();
-          addr.textContent = 'bidhanbormon08@gmail.com';
-          msg.appendChild(addr);
-
-          /* A second way out that needs no mail client at all. */
-          msg.appendChild(document.createTextNode(' — or '));
-          var copy = document.createElement('a');
-          copy.href = '#';
-          copy.textContent = 'copy your message';
-          copy.addEventListener('click', function (ev) {
-            ev.preventDefault();
-            copyFallback();
-          });
-          msg.appendChild(copy);
-
-          btn.textContent = 'Send Message';
-          btn.disabled = false;
-        });
+      /* Let the browser perform the real POST to Web3Forms now. */
     });
+
+    /* After Web3Forms redirects back to ?sent=1#contact, thank the visitor. */
+    function showSentState() {
+      var sent = /[?&]sent=1\b/.test(location.search);
+      var saved = null;
+      try { saved = JSON.parse(sessionStorage.getItem('contactSent') || 'null'); } catch (err) { }
+      if (!sent && !saved) return;
+      var who = (saved && saved.name) ? ' ' + saved.name : '';
+      form.reset();
+      msg.className = 'form-msg ok';
+      msg.textContent = 'Thanks' + who + '! Your message is on its way to my inbox — I usually reply within a day.';
+      try { sessionStorage.removeItem('contactSent'); } catch (err) { }
+      if (window.history && history.replaceState) {
+        history.replaceState(null, '', location.pathname + '#contact');
+      }
+    }
+    showSentState();
   }
 })();

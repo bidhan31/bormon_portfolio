@@ -103,7 +103,8 @@
         <picture>
           <source srcset="/img/bormon-avatar.webp" type="image/webp">
           <img src="/img/bormon-avatar.png" alt="Bidhan Chandro Barman, Software Engineer and QA Automation
-            specialist" width="640" height="640" fetchpriority="high" decoding="async" style="object-fit:cover;object-position:50% 28%">
+            specialist" width="640" height="640" fetchpriority="high" decoding="async"
+            style="object-fit:cover;object-position:50% 28%">
         </picture>
       </div>
     </section>
@@ -480,12 +481,15 @@
             </div>
           </div>
         </div>
-        <form id="contactForm" action="https://formsubmit.co/bidhanbormon08@gmail.com" method="POST" novalidate>
-          <input type="hidden" name="_subject" value="New portfolio enquiry!">
-          <input type="hidden" name="_template" value="table">
-          <input type="hidden" name="_next" value="">
+        <form id="contactForm" action="https://api.web3forms.com/submit" method="POST" novalidate>
+          <!-- Get your free key at https://web3forms.com (1 min) and paste below. -->
+          <input type="hidden" name="access_key" value="7ddc25a9-e639-434a-adea-80114a9b0b0d">
+          <input type="hidden" name="subject" value="New portfolio enquiry!">
+          <input type="hidden" name="from_name" value="Portfolio Contact Form">
+          <input type="hidden" name="redirect" value="">
           <!-- Spam trap: hidden from people, filled in by bots. -->
-          <input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"
+            style="display:none">
           <div class="form-row">
             <label>Your Name<input type="text" name="name" placeholder="Jane Doe" required></label>
             <label>Your Email<input type="email" name="email" placeholder="jane@company.com" required></label>
