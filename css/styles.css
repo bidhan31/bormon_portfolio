@@ -146,7 +146,7 @@ footer {
   font-weight: 700;
   font-size: .78rem;
   letter-spacing: .22em;
-  text-transform: uppercase;
+  text-transform: capitalize;
   margin-bottom: 12px;
 }
 
@@ -415,6 +415,9 @@ nav .btn {
   display: grid;
   place-items: center;
   isolation: isolate;
+  /* room for badges orbiting slightly outside the glow ring */
+  margin: 36px;
+  overflow: visible;
 }
 
 .avatar-frame::before {
@@ -488,6 +491,9 @@ nav .btn {
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
   font-size: .95rem;
+  /* translate(-50%,-50%) keeps badge centered on its orbit point;
+     translateY is the float offset — both must stay in the keyframes */
+  transform: translate(-50%, -50%);
   animation: float 6s ease-in-out infinite;
 }
 
@@ -500,47 +506,57 @@ nav .btn {
 
   0%,
   100% {
-    transform: translateY(0)
+    transform: translate(-50%, -50%) translateY(0)
   }
 
   50% {
-    transform: translateY(-11px)
+    transform: translate(-50%, -50%) translateY(-11px)
   }
 }
 
+/* 6 badges, EQUAL distance: perfect hexagon, 60° apart, radius 57%.
+   Center 50%/50%. Adjacent gap = 57% of frame on all 6 edges.
+   Orientation: mid-right / mid-left + 4 corners — matches design:
+   JS TL, React TR, drop ML, star MR, Node BL, check BR. */
 .badge.b1 {
-  top: 2%;
-  left: 2%;
+  /* JS — top-left (120°) */
+  top: .64%;
+  left: 21.5%;
   animation-delay: 0s
 }
 
 .badge.b2 {
-  top: 6%;
-  right: 0;
+  /* React — top-right */
+  top: .64%;
+  left: 78.5%;
   animation-delay: .5s
 }
 
 .badge.b3 {
-  bottom: 16%;
-  left: -4%;
+  /* Node — bottom-left */
+  top: 99.36%;
+  left: 21.5%;
   animation-delay: 1s
 }
 
 .badge.b4 {
-  bottom: 4%;
-  right: 8%;
+  /* check — bottom-right (300°) */
+  top: 99.36%;
+  left: 78.5%;
   animation-delay: 1.5s
 }
 
 .badge.b5 {
-  top: 44%;
+  /* drop — mid-left (180°) */
+  top: 50%;
   left: -7%;
   animation-delay: 2s
 }
 
 .badge.b6 {
-  bottom: 26%;
-  right: -6%;
+  /* star — mid-right (0°) */
+  top: 50%;
+  left: 107%;
   animation-delay: 2.5s
 }
 
@@ -562,14 +578,34 @@ nav .btn {
     justify-content: center
   }
 
-  .badge.b5,
-  .badge.b3 {
-    left: 2%
+  /* Mobile: keep hexagon equal — just shrink orbit radius uniformly
+     so side badges don't touch viewport edge. Scale 57% -> 52%. */
+  .badge.b1,
+  .badge.b2 {
+    top: 4.94%
   }
 
-  .badge.b4,
+  .badge.b1,
+  .badge.b3 {
+    left: 24%
+  }
+
+  .badge.b2,
+  .badge.b4 {
+    left: 76%
+  }
+
+  .badge.b3,
+  .badge.b4 {
+    top: 95.06%
+  }
+
+  .badge.b5 {
+    left: -2%
+  }
+
   .badge.b6 {
-    right: 2%
+    left: 102%
   }
 }
 
